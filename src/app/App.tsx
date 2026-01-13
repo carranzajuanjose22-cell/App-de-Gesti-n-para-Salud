@@ -1,3 +1,4 @@
+// src/app/App.tsx
 import { useState, useEffect } from "react";
 import { LoginPage } from "@/app/components/LoginPage";
 import { Dashboard } from "@/app/components/Dashboard";
@@ -7,36 +8,30 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
 
-  // Verificar si hay sesión guardada
-  useEffect(() => {
-    const savedSession = localStorage.getItem("session");
-    if (savedSession) {
-      const session = JSON.parse(savedSession);
-      setIsAuthenticated(true);
-      setUsername(session.username);
-    }
-  }, []);
+  // --- AGREGA ESTA VARIABLE AQUÍ ---
+  const [stats] = useState({
+    appointmentsToday: 8,
+    totalPatients: 145,
+    monthlyRevenue: 52000,
+    pendingNotifications: 3
+  });
 
-  const handleLogin = (user: string) => {
-    setIsAuthenticated(true);
-    setUsername(user);
-    localStorage.setItem("session", JSON.stringify({ username: user }));
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUsername("");
-    localStorage.removeItem("session");
-  };
+  // ... (tu useEffect de sesión se mantiene igual)
 
   return (
-    <>
+    // Agregamos h-full y un fondo sólido para asegurar que se vea
+    <div className="min-h-screen w-full bg-slate-200"> 
       {isAuthenticated ? (
-        <Dashboard username={username} onLogout={handleLogout} />
+        // --- ASEGÚRATE DE PASAR 'stats' AQUÍ ---
+        <Dashboard stats={stats} /> 
       ) : (
-        <LoginPage onLogin={handleLogin} />
+        <LoginPage onLogin={(user) => {
+          setIsAuthenticated(true);
+          setUsername(user);
+          localStorage.setItem("session", JSON.stringify({ username: user }));
+        }} />
       )}
       <Toaster />
-    </>
+    </div>
   );
 }

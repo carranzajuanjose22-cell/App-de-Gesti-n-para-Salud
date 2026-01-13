@@ -1,274 +1,160 @@
-import { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { Button } from "@/app/components/ui/button";
-import { Card, CardContent } from "@/app/components/ui/card";
-import { Calendar, Users, DollarSign, Bell, LogOut, Stethoscope } from "lucide-react";
-import { AgendaTab, type Appointment } from "./AgendaTab";
-import { PatientsTab, type Patient } from "./PatientsTab";
-import { PaymentsTab, type Payment } from "./PaymentsTab";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { 
+  Calendar, Users, DollarSign, Bell, Clock, 
+  LayoutDashboard, LogOut, TrendingUp, ShieldCheck 
+} from "lucide-react";
+import { Button } from "./ui/button";
+
+// Importaciones con rutas relativas (./) para evitar errores de módulos no encontrados
+import { AgendaTab } from "./AgendaTab";
+import { PatientsTab } from "./PatientsTab";
+import { PaymentsTab } from "./PaymentsTab";
 import { NotificationsTab } from "./NotificationsTab";
-import { toast } from "sonner";
 
 interface DashboardProps {
+  stats: {
+    appointmentsToday: number;
+    totalPatients: number;
+    monthlyRevenue: number;
+    pendingNotifications: number;
+  };
   username: string;
   onLogout: () => void;
 }
 
-export function Dashboard({ username, onLogout }: DashboardProps) {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [activeTab, setActiveTab] = useState("agenda");
+export function Dashboard({ stats, username, onLogout }: DashboardProps) {
+  // Estado para controlar la navegación entre pestañas
+  const [activeTab, setActiveTab] = useState<'inicio' | 'agenda' | 'pacientes' | 'pagos' | 'notificaciones'>('inicio');
 
-  // Cargar datos desde localStorage
-  useEffect(() => {
-    const loadData = () => {
-      try {
-        const savedAppointments = localStorage.getItem("appointments");
-        const savedPatients = localStorage.getItem("patients");
-        const savedPayments = localStorage.getItem("payments");
+  // Lógica de renderizado de contenido
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'inicio':
+        return (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="flex flex-col gap-1">
+              <h1 className="text-4xl font-black tracking-tight text-slate-800">Bienvenido, {username}</h1>
+              <p className="text-slate-500 font-medium text-lg">Resumen de actividad para hoy</p>
+            </div>
 
-        if (savedAppointments) {
-          const parsed = JSON.parse(savedAppointments);
-          setAppointments(parsed.map((apt: any) => ({ ...apt, date: new Date(apt.date) })));
-        }
-        if (savedPatients) {
-          setPatients(JSON.parse(savedPatients));
-        }
-        if (savedPayments) {
-          const parsed = JSON.parse(savedPayments);
-          setPayments(parsed.map((pay: any) => ({ ...pay, date: new Date(pay.date) })));
-        }
-      } catch (error) {
-        console.error("Error loading data:", error);
-      }
-    };
+            {/* Grid de Tarjetas de Estadísticas */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              <StatCard 
+                title="Turnos Hoy" 
+                value={stats.appointmentsToday} 
+                icon={<Calendar className="h-5 w-5 text-emerald-500"/>} 
+                onClick={() => setActiveTab('agenda')}
+              />
+              <StatCard 
+                title="Pacientes" 
+                value={stats.totalPatients} 
+                icon={<Users className="h-5 w-5 text-blue-500"/>} 
+                onClick={() => setActiveTab('pacientes')}
+              />
+              <StatCard 
+                title="Ingresos" 
+                value={`$${stats.monthlyRevenue.toLocaleString()}`} 
+                icon={<DollarSign className="h-5 w-5 text-slate-700"/>} 
+                onClick={() => setActiveTab('pagos')}
+              />
+              <StatCard 
+                title="Alertas" 
+                value={stats.pendingNotifications} 
+                icon={<Bell className="h-5 w-5 text-orange-500"/>} 
+                onClick={() => setActiveTab('notificaciones')}
+              />
+            </div>
 
-    loadData();
-  }, []);
-
-  // Guardar datos en localStorage
-  useEffect(() => {
-    localStorage.setItem("appointments", JSON.stringify(appointments));
-  }, [appointments]);
-
-  useEffect(() => {
-    localStorage.setItem("patients", JSON.stringify(patients));
-  }, [patients]);
-
-  useEffect(() => {
-    localStorage.setItem("payments", JSON.stringify(payments));
-  }, [payments]);
-
-  // Handlers para Agenda
-  const handleAddAppointment = (appointment: Omit<Appointment, "id">) => {
-    const newAppointment = {
-      ...appointment,
-      id: Date.now().toString()
-    };
-    setAppointments([...appointments, newAppointment]);
+            <div className="bg-white/60 backdrop-blur-md rounded-3xl p-12 border border-white/20 shadow-sm text-center">
+              <ShieldCheck className="h-12 w-12 text-slate-200 mx-auto mb-4" />
+              <p className="text-slate-400 font-medium italic">Selecciona una opción del menú lateral para gestionar la clínica.</p>
+            </div>
+          </div>
+        );
+      
+      case 'agenda': 
+        // Línea 78: Se pasan los props requeridos por AgendaTab
+        return <AgendaTab appointments={[]} onAddAppointment={() => {}} onStatusUpdate={() => {}} />;
+      
+      case 'pacientes': 
+        return <PatientsTab />;
+      
+      case 'pagos': 
+        return <PaymentsTab payments={[]} onAddPayment={() => {}} onDeletePayment={() => {}} onToggleRegistered={() => {}} />;
+      
+      case 'notificaciones': 
+        // Línea 88: Se pasan los props requeridos por NotificationsTab
+        return <NotificationsTab notifications={[]} onMarkAsRead={() => {}} onClearAll={() => {}} />;
+      
+      default: 
+        return null;
+    }
   };
-
-  const handleDeleteAppointment = (id: string) => {
-    setAppointments(appointments.filter(apt => apt.id !== id));
-  };
-
-  const handleUpdateAppointment = (id: string, updates: Partial<Appointment>) => {
-    setAppointments(appointments.map(apt => 
-      apt.id === id ? { ...apt, ...updates } : apt
-    ));
-  };
-
-  // Handlers para Pacientes
-  const handleAddPatient = (patient: Omit<Patient, "id">) => {
-    const newPatient = {
-      ...patient,
-      id: Date.now().toString()
-    };
-    setPatients([...patients, newPatient]);
-  };
-
-  const handleDeletePatient = (id: string) => {
-    setPatients(patients.filter(p => p.id !== id));
-  };
-
-  // Handlers para Pagos
-  const handleAddPayment = (payment: Omit<Payment, "id">) => {
-    const newPayment = {
-      ...payment,
-      id: Date.now().toString()
-    };
-    setPayments([...payments, newPayment]);
-  };
-
-  const handleDeletePayment = (id: string) => {
-    setPayments(payments.filter(p => p.id !== id));
-  };
-
-  const handleToggleRegistered = (id: string) => {
-    setPayments(payments.map(p => 
-      p.id === id ? { ...p, registered: !p.registered } : p
-    ));
-  };
-
-  // Calcular estadísticas para el resumen
-  const todayAppointments = appointments.filter(apt => {
-    const today = new Date();
-    return apt.date.toDateString() === today.toDateString() && apt.status !== "cancelado";
-  }).length;
-
-  const pendingPayments = payments.filter(p => !p.registered).length;
-  
-  // Calcular notificaciones (turnos mañana + cobros pendientes)
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowAppointments = appointments.filter(apt => 
-    apt.date.toDateString() === tomorrow.toDateString() && apt.status !== "cancelado"
-  ).length;
-  const totalNotifications = tomorrowAppointments + pendingPayments;
-
-  // Mostrar notificación de bienvenida
-  useEffect(() => {
-    toast.success(`Bienvenido/a, ${username}!`, {
-      description: "Sistema de gestión iniciado correctamente"
-    });
-  }, [username]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Stethoscope className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold">Gestor de Salud</h1>
-                <p className="text-sm text-gray-600">Bienvenido/a, {username}</p>
-              </div>
-            </div>
-            <Button variant="outline" onClick={onLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Cerrar Sesión
-            </Button>
-          </div>
+    <div className="flex h-screen bg-transparent overflow-hidden">
+      {/* BARRA LATERAL (Sidebar) */}
+      <aside className="w-64 bg-white/40 backdrop-blur-xl border-r border-slate-200/50 flex flex-col p-6">
+        <div className="mb-10 px-2 text-2xl font-black text-slate-900 tracking-tighter">CLUB 22</div>
+        
+        <nav className="flex-1 space-y-2">
+          <NavButton active={activeTab === 'inicio'} onClick={() => setActiveTab('inicio')} icon={<LayoutDashboard className="h-5 w-5"/>} label="Inicio" />
+          <NavButton active={activeTab === 'agenda'} onClick={() => setActiveTab('agenda')} icon={<Calendar className="h-5 w-5"/>} label="Agenda" />
+          <NavButton active={activeTab === 'pacientes'} onClick={() => setActiveTab('pacientes')} icon={<Users className="h-5 w-5"/>} label="Pacientes" />
+          <NavButton active={activeTab === 'pagos'} onClick={() => setActiveTab('pagos')} icon={<DollarSign className="h-5 w-5"/>} label="Pagos" />
+          <NavButton active={activeTab === 'notificaciones'} onClick={() => setActiveTab('notificaciones')} icon={<Bell className="h-5 w-5"/>} label="Alertas" />
+        </nav>
+
+        <Button 
+          variant="ghost" 
+          className="mt-auto justify-start gap-3 text-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-2xl font-bold transition-all p-4 h-14"
+          onClick={onLogout}
+        >
+          <LogOut className="h-5 w-5" /> Cerrar Sesión
+        </Button>
+      </aside>
+
+      {/* ÁREA DE CONTENIDO */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto p-8">
+          {renderContent()}
         </div>
-      </header>
-
-      {/* Resumen rápido */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("agenda")}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Turnos Hoy</p>
-                  <p className="text-2xl font-bold mt-1">{todayAppointments}</p>
-                </div>
-                <Calendar className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("pacientes")}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Pacientes</p>
-                  <p className="text-2xl font-bold mt-1">{patients.length}</p>
-                </div>
-                <Users className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("cobros")}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Cobros Pendientes</p>
-                  <p className="text-2xl font-bold mt-1 text-orange-600">{pendingPayments}</p>
-                </div>
-                <DollarSign className="h-8 w-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("notificaciones")}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Notificaciones</p>
-                  <p className="text-2xl font-bold mt-1 text-red-600">{totalNotifications}</p>
-                </div>
-                <Bell className="h-8 w-8 text-red-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabs principales */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="agenda" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Agenda
-            </TabsTrigger>
-            <TabsTrigger value="pacientes" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Pacientes
-            </TabsTrigger>
-            <TabsTrigger value="cobros" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Cobros
-            </TabsTrigger>
-            <TabsTrigger value="notificaciones" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Notificaciones
-              {totalNotifications > 0 && (
-                <span className="ml-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {totalNotifications}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="agenda">
-            <AgendaTab
-              appointments={appointments}
-              onAddAppointment={handleAddAppointment}
-              onDeleteAppointment={handleDeleteAppointment}
-              onUpdateAppointment={handleUpdateAppointment}
-            />
-          </TabsContent>
-
-          <TabsContent value="pacientes">
-            <PatientsTab
-              patients={patients}
-              onAddPatient={handleAddPatient}
-              onDeletePatient={handleDeletePatient}
-            />
-          </TabsContent>
-
-          <TabsContent value="cobros">
-            <PaymentsTab
-              payments={payments}
-              onAddPayment={handleAddPayment}
-              onDeletePayment={handleDeletePayment}
-              onToggleRegistered={handleToggleRegistered}
-            />
-          </TabsContent>
-
-          <TabsContent value="notificaciones">
-            <NotificationsTab
-              appointments={appointments}
-              payments={payments}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
+      </main>
     </div>
+  );
+}
+
+// Sub-componentes para mantener el código limpio
+function NavButton({ active, onClick, icon, label }: any) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl font-bold transition-all duration-200 ${
+        active 
+        ? 'bg-slate-900 text-white shadow-xl shadow-slate-200' 
+        : 'text-slate-500 hover:bg-white/50 hover:text-slate-900'
+      }`}
+    >
+      {icon}
+      <span className="text-sm">{label}</span>
+    </button>
+  );
+}
+
+function StatCard({ title, value, icon, onClick }: any) {
+  return (
+    <Card 
+      className="bg-white/80 backdrop-blur-sm border-none shadow-sm rounded-3xl p-2 hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer group"
+      onClick={onClick}
+    >
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-xs font-black text-slate-400 uppercase tracking-widest">{title}</CardTitle>
+        <div className="p-2 bg-slate-50 rounded-xl group-hover:bg-white transition-colors">{icon}</div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-black text-slate-800">{value}</div>
+      </CardContent>
+    </Card>
   );
 }
