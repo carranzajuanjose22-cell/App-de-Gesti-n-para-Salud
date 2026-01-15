@@ -38,7 +38,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               <Stethoscope className="h-8 w-8 text-blue-600" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Gestor de Salud</CardTitle>
+          <CardTitle className="text-2xl">GESTION SALUD</CardTitle>
           <CardDescription>
             Ingrese sus credenciales para acceder al sistema
           </CardDescription>

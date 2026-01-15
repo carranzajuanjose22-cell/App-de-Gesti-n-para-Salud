@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 
-// Importaciones con rutas relativas (./) para evitar errores de módulos no encontrados
+// Importaciones con rutas relativas
 import { AgendaTab } from "./AgendaTab";
 import { PatientsTab } from "./PatientsTab";
 import { PaymentsTab } from "./PaymentsTab";
@@ -21,13 +21,25 @@ interface DashboardProps {
   };
   username: string;
   onLogout: () => void;
+  appointments: any[];
+  addAppointment: (app: any) => void;
+  payments: any[];
+  addPayment: (pay: any) => void;
 }
 
-export function Dashboard({ stats, username, onLogout }: DashboardProps) {
-  // Estado para controlar la navegación entre pestañas
+// CORRECCIÓN AQUÍ: Agregamos las nuevas propiedades a la desestructuración
+export function Dashboard({ 
+  stats, 
+  username, 
+  onLogout, 
+  appointments, 
+  addAppointment, 
+  payments, 
+  addPayment 
+}: DashboardProps) {
+  
   const [activeTab, setActiveTab] = useState<'inicio' | 'agenda' | 'pacientes' | 'pagos' | 'notificaciones'>('inicio');
 
-  // Lógica de renderizado de contenido
   const renderContent = () => {
     switch (activeTab) {
       case 'inicio':
@@ -38,7 +50,6 @@ export function Dashboard({ stats, username, onLogout }: DashboardProps) {
               <p className="text-slate-500 font-medium text-lg">Resumen de actividad para hoy</p>
             </div>
 
-            {/* Grid de Tarjetas de Estadísticas */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               <StatCard 
                 title="Turnos Hoy" 
@@ -74,18 +85,35 @@ export function Dashboard({ stats, username, onLogout }: DashboardProps) {
         );
       
       case 'agenda': 
-        // Línea 78: Se pasan los props requeridos por AgendaTab
-        return <AgendaTab appointments={[]} onAddAppointment={() => {}} onStatusUpdate={() => {}} />;
+  return (
+    <AgendaTab 
+      appointments={appointments} 
+      onAddAppointment={addAppointment} 
+      onStatusUpdate={() => {}} // Cambiamos de onUpdateStatus a onStatusUpdate
+    />
+  );
       
       case 'pacientes': 
         return <PatientsTab />;
       
       case 'pagos': 
-        return <PaymentsTab payments={[]} onAddPayment={() => {}} onDeletePayment={() => {}} onToggleRegistered={() => {}} />;
+        return (
+          <PaymentsTab 
+            payments={payments} 
+            onAddPayment={addPayment} 
+            onDeletePayment={() => {}} 
+            onToggleRegistered={() => {}} 
+          />
+        );
       
       case 'notificaciones': 
-        // Línea 88: Se pasan los props requeridos por NotificationsTab
-        return <NotificationsTab notifications={[]} onMarkAsRead={() => {}} onClearAll={() => {}} />;
+  return (
+    <NotificationsTab 
+      notifications={[]} // Antes tenías {[[]]}
+      onMarkAsRead={() => {}} 
+      onClearAll={() => {}} 
+    />
+  );
       
       default: 
         return null;
@@ -94,9 +122,8 @@ export function Dashboard({ stats, username, onLogout }: DashboardProps) {
 
   return (
     <div className="flex h-screen bg-transparent overflow-hidden">
-      {/* BARRA LATERAL (Sidebar) */}
       <aside className="w-64 bg-white/40 backdrop-blur-xl border-r border-slate-200/50 flex flex-col p-6">
-        <div className="mb-10 px-2 text-2xl font-black text-slate-900 tracking-tighter">CLUB 22</div>
+        <div className="mb-10 px-2 text-2xl font-black text-slate-900 tracking-tighter">Gestión Salud</div>
         
         <nav className="flex-1 space-y-2">
           <NavButton active={activeTab === 'inicio'} onClick={() => setActiveTab('inicio')} icon={<LayoutDashboard className="h-5 w-5"/>} label="Inicio" />
@@ -115,7 +142,6 @@ export function Dashboard({ stats, username, onLogout }: DashboardProps) {
         </Button>
       </aside>
 
-      {/* ÁREA DE CONTENIDO */}
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto p-8">
           {renderContent()}
@@ -125,7 +151,7 @@ export function Dashboard({ stats, username, onLogout }: DashboardProps) {
   );
 }
 
-// Sub-componentes para mantener el código limpio
+// Sub-componentes
 function NavButton({ active, onClick, icon, label }: any) {
   return (
     <button 
