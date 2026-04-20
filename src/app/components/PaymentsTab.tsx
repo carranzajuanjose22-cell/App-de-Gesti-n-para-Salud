@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
-import { DollarSign, Plus, Trash2, Calendar, Filter } from "lucide-react";
+import React, { useState } from 'react';
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { DollarSign, Plus, Trash2, Calendar, Filter, CreditCard, Wallet, Landmark, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -56,263 +56,148 @@ export function PaymentsTab({ payments, onAddPayment, onDeletePayment, onToggleR
     });
 
     setNewPayment({
-      patientName: "",
-      date: new Date(),
-      time: "",
-      amount: "",
-      healthInsurance: "",
-      paymentMethod: "efectivo",
-      notes: "",
-      registered: false
+      patientName: "", date: new Date(), time: "", amount: "",
+      healthInsurance: "", paymentMethod: "efectivo", notes: "", registered: false
     });
     setIsDialogOpen(false);
     toast.success("Cobro registrado exitosamente");
   };
 
-  const filteredPayments = payments.filter(payment => {
-    if (filterStatus === "pending") return !payment.registered;
-    if (filterStatus === "registered") return payment.registered;
+  const filteredPayments = (payments || []).filter(p => {
+    if (filterStatus === "pending") return !p.registered;
+    if (filterStatus === "registered") return p.registered;
     return true;
   }).sort((a, b) => b.date.getTime() - a.date.getTime());
 
   const totalAmount = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
-  const pendingAmount = payments.filter(p => !p.registered).reduce((sum, p) => sum + p.amount, 0);
+  const pendingAmount = (payments || []).filter(p => !p.registered).reduce((sum, p) => sum + p.amount, 0);
+  const registeredAmount = (payments || []).filter(p => p.registered).reduce((sum, p) => sum + p.amount, 0);
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Cobros</CardTitle>
+    <div className="space-y-8 p-2">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl font-black tracking-tight text-slate-900">Gestión de Cobros</h1>
+        <p className="text-slate-500 font-medium">Control de ingresos y estados de facturación</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-white/80 backdrop-blur-sm border-none shadow-sm rounded-3xl group">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+              <Wallet className="h-4 w-4" /> Total Cobros
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalAmount.toLocaleString("es-AR")}</div>
-            <p className="text-xs text-gray-500 mt-1">
-              {filteredPayments.length} {filteredPayments.length === 1 ? "registro" : "registros"}
-            </p>
+            <div className="text-3xl font-black text-slate-900">${totalAmount.toLocaleString("es-AR")}</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">Pendientes de Registro</CardTitle>
+        <Card className="bg-white/80 backdrop-blur-sm border-none shadow-sm rounded-3xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 text-rose-600">
+              <Clock className="h-4 w-4" /> Pendientes
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              ${pendingAmount.toLocaleString("es-AR")}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {payments.filter(p => !p.registered).length} pendientes
-            </p>
+            <div className="text-3xl font-black text-rose-600">${pendingAmount.toLocaleString("es-AR")}</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">Registrados</CardTitle>
+        <Card className="bg-white/80 backdrop-blur-sm border-none shadow-sm rounded-3xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 text-emerald-600">
+              <Landmark className="h-4 w-4" /> Registrados
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              ${payments.filter(p => p.registered).reduce((sum, p) => sum + p.amount, 0).toLocaleString("es-AR")}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {payments.filter(p => p.registered).length} registrados
-            </p>
+            <div className="text-3xl font-black text-emerald-600">${registeredAmount.toLocaleString("es-AR")}</div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Registro de Cobros
-            </CardTitle>
+      <Card className="border-none shadow-sm bg-white rounded-3xl overflow-hidden">
+        <CardHeader className="border-b border-slate-50">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
+              <SelectTrigger className="w-48 bg-white border-slate-200 rounded-xl">
+                <SelectValue placeholder="Filtrar por estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los cobros</SelectItem>
+                <SelectItem value="pending">Pendientes</SelectItem>
+                <SelectItem value="registered">Registrados</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nuevo Cobro
+                <Button className="bg-slate-900 hover:bg-black text-white rounded-xl">
+                  <Plus className="h-4 w-4 mr-2" /> Nuevo Cobro
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="rounded-3xl">
                 <DialogHeader>
-                  <DialogTitle>Registrar Nuevo Cobro</DialogTitle>
-                  <DialogDescription>
-                    Complete los datos del cobro
-                  </DialogDescription>
+                  <DialogTitle className="font-black">Registrar Cobro</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
+                <div className="grid gap-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="patient">Paciente *</Label>
-                    <Input
-                      id="patient"
-                      value={newPayment.patientName}
-                      onChange={(e) => setNewPayment({ ...newPayment, patientName: e.target.value })}
-                      placeholder="Nombre del paciente"
-                    />
+                    <Label>Paciente</Label>
+                    <Input className="rounded-xl" value={newPayment.patientName} onChange={(e) => setNewPayment({...newPayment, patientName: e.target.value})} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="date">Fecha *</Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        value={format(newPayment.date, "yyyy-MM-dd")}
-                        onChange={(e) => setNewPayment({ ...newPayment, date: new Date(e.target.value) })}
-                      />
+                      <Label>Monto</Label>
+                      <Input type="number" className="rounded-xl" value={newPayment.amount} onChange={(e) => setNewPayment({...newPayment, amount: e.target.value})} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="time">Hora *</Label>
-                      <Input
-                        id="time"
-                        type="time"
-                        value={newPayment.time}
-                        onChange={(e) => setNewPayment({ ...newPayment, time: e.target.value })}
-                      />
+                      <Label>Hora</Label>
+                      <Input type="time" className="rounded-xl" value={newPayment.time} onChange={(e) => setNewPayment({...newPayment, time: e.target.value})} />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Monto *</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      value={newPayment.amount}
-                      onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="healthInsurance">Obra Social</Label>
-                    <Input
-                      id="healthInsurance"
-                      value={newPayment.healthInsurance}
-                      onChange={(e) => setNewPayment({ ...newPayment, healthInsurance: e.target.value })}
-                      placeholder="Ej: OSDE, Particular"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentMethod">Método de Pago</Label>
-                    <Select
-                      value={newPayment.paymentMethod}
-                      onValueChange={(value: any) => setNewPayment({ ...newPayment, paymentMethod: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="efectivo">Efectivo</SelectItem>
-                        <SelectItem value="transferencia">Transferencia</SelectItem>
-                        <SelectItem value="debito">Débito</SelectItem>
-                        <SelectItem value="credito">Crédito</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Notas</Label>
-                    <Input
-                      id="notes"
-                      value={newPayment.notes}
-                      onChange={(e) => setNewPayment({ ...newPayment, notes: e.target.value })}
-                      placeholder="Observaciones adicionales"
-                    />
-                  </div>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleAddPayment}>
-                    Guardar Cobro
-                  </Button>
-                </div>
+                <Button onClick={handleAddPayment} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">Guardar</Button>
               </DialogContent>
             </Dialog>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="mb-4 flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los cobros</SelectItem>
-                <SelectItem value="pending">Pendientes de registro</SelectItem>
-                <SelectItem value="registered">Registrados</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
-          {filteredPayments.length === 0 ? (
-            <div className="text-center py-12">
-              <DollarSign className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No hay cobros registrados</p>
-            </div>
-          ) : (
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Fecha/Hora</TableHead>
-                    <TableHead>Paciente</TableHead>
-                    <TableHead>Obra Social</TableHead>
-                    <TableHead>Método</TableHead>
-                    <TableHead className="text-right">Monto</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPayments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Calendar className="h-3 w-3" />
-                          {format(payment.date, "dd/MM/yyyy", { locale: es })} {payment.time}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{payment.patientName}</TableCell>
-                      <TableCell>{payment.healthInsurance || "-"}</TableCell>
-                      <TableCell className="capitalize">{payment.paymentMethod}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        ${payment.amount.toLocaleString("es-AR")}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant={payment.registered ? "outline" : "default"}
-                          onClick={() => {
-                            onToggleRegistered(payment.id);
-                            toast.success(payment.registered ? "Marcado como pendiente" : "Marcado como registrado");
-                          }}
-                          className={payment.registered ? "text-green-600 border-green-600" : ""}
-                        >
-                          {payment.registered ? "Registrado" : "Pendiente"}
-                        </Button>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            onDeletePayment(payment.id);
-                            toast.success("Cobro eliminado");
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Paciente</TableHead>
+              <TableHead>Método</TableHead>
+              <TableHead className="text-right">Monto</TableHead>
+              <TableHead className="text-center">Estado</TableHead>
+              <TableHead className="text-right"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredPayments.map((payment) => (
+              <TableRow key={payment.id}>
+                <TableCell className="font-bold">{format(payment.date, "dd/MM/yyyy", { locale: es })}</TableCell>
+                <TableCell className="font-medium text-slate-700">{payment.patientName}</TableCell>
+                <TableCell className="capitalize text-xs">{payment.paymentMethod}</TableCell>
+                <TableCell className="text-right font-black">${payment.amount.toLocaleString("es-AR")}</TableCell>
+                <TableCell className="text-center">
+                  <button 
+                    onClick={() => onToggleRegistered(payment.id)}
+                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${
+                      payment.registered ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                    }`}
+                  >
+                    {payment.registered ? "Conciliado" : "Pendiente"}
+                  </button>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => onDeletePayment(payment.id)}>
+                    <Trash2 className="h-4 w-4 text-rose-500" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </Card>
     </div>
   );

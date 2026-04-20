@@ -2,39 +2,52 @@ import { useState, useEffect } from "react";
 import { LoginPage } from "@/app/components/LoginPage";
 import { Dashboard } from "@/app/components/Dashboard";
 import { Toaster } from "@/app/components/ui/sonner";
+// Importamos el cliente de Supabase
+import { supabase } from "@/lib/supabase"; 
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState("");
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Verificar si hay sesión guardada
   useEffect(() => {
-    const savedSession = localStorage.getItem("session");
-    if (savedSession) {
-      const session = JSON.parse(savedSession);
-      setIsAuthenticated(true);
-      setUsername(session.username);
-    }
+    // 1. Obtener la sesión actual apenas carga la app
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    // 2. Escuchar cambios en la autenticación (Login, Logout, Token renovado)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogin = (user: string) => {
-    setIsAuthenticated(true);
-    setUsername(user);
-    localStorage.setItem("session", JSON.stringify({ username: user }));
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    // No hace falta setear el estado manualmente, 
+    // onAuthStateChange se encarga de detectar el logout
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUsername("");
-    localStorage.removeItem("session");
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-blue-600 animate-pulse font-medium">Cargando sistema...</p>
+      </div>
+    );
+  }
 
   return (
     <>
-      {isAuthenticated ? (
-        <Dashboard username={username} onLogout={handleLogout} />
+      {session ? (
+        // Pasamos el email del usuario de la sesión de Supabase
+        <Dashboard 
+          username={session.user.email?.split('@')[0] || "Profesional"} 
+          onLogout={handleLogout} 
+        />
       ) : (
-        <LoginPage onLogin={handleLogin} />
+        <LoginPage />
       )}
       <Toaster />
     </>

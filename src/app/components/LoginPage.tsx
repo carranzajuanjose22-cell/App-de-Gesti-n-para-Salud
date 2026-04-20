@@ -4,29 +4,46 @@ import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Stethoscope } from "lucide-react";
+// Importamos el cliente que creaste recién
+import { supabase } from "@/lib/supabase"; 
 
-interface LoginPageProps {
-  onLogin: (username: string) => void;
-}
-
-export function LoginPage({ onLogin }: LoginPageProps) {
-  const [username, setUsername] = useState("");
+export function LoginPage() {
+  const [email, setEmail] = useState(""); // Cambié username por email
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validación simple (en producción esto sería contra una base de datos real)
-    if (username && password) {
-      if (password.length >= 4) {
-        onLogin(username);
-      } else {
-        setError("La contraseña debe tener al menos 4 caracteres");
-      }
-    } else {
-      setError("Por favor complete todos los campos");
+    setLoading(true);
+    setError("");
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
     }
+    setLoading(false);
+  };
+
+  const handleSignUp = async () => {
+    setLoading(true);
+    setError("");
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      alert("¡Cuenta creada! Ya puedes ingresar.");
+    }
+    setLoading(false);
   };
 
   return (
@@ -40,20 +57,20 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           </div>
           <CardTitle className="text-2xl">Gestor de Salud</CardTitle>
           <CardDescription>
-            Ingrese sus credenciales para acceder al sistema
+            Acceso para profesionales de la salud
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Usuario</Label>
+              <Label htmlFor="email">Correo Electrónico</Label>
               <Input
-                id="username"
-                type="text"
-                placeholder="Ingrese su usuario"
-                value={username}
+                id="email"
+                type="email"
+                placeholder="doctor@ejemplo.com"
+                value={email}
                 onChange={(e) => {
-                  setUsername(e.target.value);
+                  setEmail(e.target.value);
                   setError("");
                 }}
               />
@@ -71,15 +88,26 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                 }}
               />
             </div>
+            
             {error && (
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-red-600 font-medium">{error}</p>
             )}
-            <Button type="submit" className="w-full">
-              Iniciar Sesión
-            </Button>
-            <p className="text-xs text-gray-500 text-center mt-4">
-              Demo: use cualquier usuario y contraseña (mín. 4 caracteres)
-            </p>
+
+            <div className="flex flex-col gap-2">
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Procesando..." : "Iniciar Sesión"}
+              </Button>
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full" 
+                onClick={handleSignUp}
+                disabled={loading}
+              >
+                Crear cuenta profesional
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
